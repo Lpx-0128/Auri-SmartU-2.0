@@ -1,8 +1,8 @@
-# 🎓 Auri-SmartU — AI-Powered Campus Assistant
+# 🎓 Aura-SmartU — AI-Powered Campus Assistant
 
 ## 🧠 Overview
-**Auri-SmartU** is an AI-driven web/mobile application designed to enhance the daily experience of university students.  
-From finding an available classroom or lift, to checking library seat status or estimating driving time to the well-known places at surrounding(ex:Sunway Pyramid). — Auri-SmartU integrates multiple intelligent services into one unified platform.
+**Aura-SmartU** is an AI-driven web/mobile application designed to enhance the daily experience of university students.  
+From finding an available classroom or lift, to checking library seat status or estimating driving time to the well-known places at surrounding(ex:Sunway Pyramid). — Aura-SmartU integrates multiple intelligent services into one unified platform.
 
 Our goal is to make campus life **smarter, simpler, and more efficient** through AI and data-driven insights.
 
@@ -25,7 +25,7 @@ Our goal is to make campus life **smarter, simpler, and more efficient** through
 
 ### 🎙️ Voice AI Assistant
 - Interact with the app through natural voice commands.  
-- Ask for room availability, upcoming class reminders, or the fastest route to the library.  
+- Ask for library and food court availability,traffic,or ask which lift can use to reach the classroom in shortest time.  
 
 ---
 
@@ -35,7 +35,7 @@ Our goal is to make campus life **smarter, simpler, and more efficient** through
 |-----------|-------------|
 | **Frontend** | React (Web) / Flutter (Mobile) |
 | **Backend** | Node.js / Express / FastAPI |
-| **Database** | Firebase / PostgreSQL |
+| **Database** | Superbase |
 | **AI & ML** | Python (scikit-learn, TensorFlow), OpenAI API |
 | **Maps & Sensors** | Google Maps API / IoT Integration |
 | **Voice Interface** | SpeechRecognition API / GPT-based Chatbot |
@@ -61,7 +61,7 @@ Our goal is to make campus life **smarter, simpler, and more efficient** through
 ---
 
 ## 🌟 Example Use Cases
-- "Hey Auri, where’s the nearest available study room?"
+- "Hey Aura, where’s the nearest available study room?"
 - "Show me which lifts are not crowded right now."
 - "Plan my study schedule for CS101 this semester."
 - "How long does it take to walk to the cafeteria from Block D?"
