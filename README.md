@@ -88,7 +88,7 @@ Our goal is to make campus life **smarter, simpler, and more efficient** through
 ```bash
 # Clone the repository
 git clone https://github.com/SWEATChamp/Auri-SmartU.git
-cd Auri-SmartU
+cd AURA-SmartU
 
 # Install dependencies
 npm install  # or pip install -r requirements.txt
