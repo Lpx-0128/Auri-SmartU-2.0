@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Search, X, MapPin, Users } from 'lucide-react';
+import { Search, X, MapPin, Users, Wifi, Monitor, Wind, Beaker } from 'lucide-react';
 import type { Classroom } from '../types';
 
 interface ClassroomAvailabilityProps {
@@ -41,7 +41,7 @@ export function ClassroomAvailability({ onClose }: ClassroomAvailabilityProps) {
           .select('*')
           .eq('university_id', profile.university_id)
           .order('building', { ascending: true })
-          .order('name', { ascending: true });
+          .order('room_number', { ascending: true });
 
         if (data) {
           setClassrooms(data);
@@ -65,7 +65,7 @@ export function ClassroomAvailability({ onClose }: ClassroomAvailabilityProps) {
     if (searchTerm) {
       filtered = filtered.filter(
         (room) =>
-          room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          room.room_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
           room.building.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -75,10 +75,25 @@ export function ClassroomAvailability({ onClose }: ClassroomAvailabilityProps) {
 
   const buildings = Array.from(new Set(classrooms.map((room) => room.building)));
 
+  const getFacilityIcon = (facility: string) => {
+    const lower = facility.toLowerCase();
+    if (lower.includes('projector') || lower.includes('monitor')) return <Monitor size={16} />;
+    if (lower.includes('air') || lower.includes('conditioning')) return <Wind size={16} />;
+    if (lower.includes('lab') || lower.includes('equipment')) return <Beaker size={16} />;
+    if (lower.includes('wifi')) return <Wifi size={16} />;
+    return null;
+  };
+
   const getAvailabilityColor = (isAvailable: boolean) => {
     return isAvailable
       ? 'bg-gradient-to-r from-green-500 to-emerald-500'
       : 'bg-gradient-to-r from-red-500 to-rose-500';
+  };
+
+  const formatAvailableUntil = (dateString: string | null) => {
+    if (!dateString) return 'All day';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
   if (loading) {
@@ -165,7 +180,7 @@ export function ClassroomAvailability({ onClose }: ClassroomAvailabilityProps) {
                     <div>
                       <div className="flex items-center space-x-2 mb-1">
                         <MapPin className="text-blue-600" size={18} />
-                        <h3 className="font-bold text-slate-800">{room.name}</h3>
+                        <h3 className="font-bold text-slate-800">{room.room_number}</h3>
                       </div>
                       <p className="text-sm text-slate-600">{room.building}</p>
                     </div>
@@ -186,7 +201,38 @@ export function ClassroomAvailability({ onClose }: ClassroomAvailabilityProps) {
                       </div>
                       <span className="font-medium text-slate-800">{room.capacity} seats</span>
                     </div>
+
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600">Floor</span>
+                      <span className="font-medium text-slate-800">{room.floor}</span>
+                    </div>
+
+                    {!room.is_available && room.available_until && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-600">Free at</span>
+                        <span className="font-medium text-orange-600">
+                          {formatAvailableUntil(room.available_until)}
+                        </span>
+                      </div>
+                    )}
                   </div>
+
+                  {room.facilities && Array.isArray(room.facilities) && room.facilities.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 mb-2">Facilities</p>
+                      <div className="flex flex-wrap gap-2">
+                        {room.facilities.map((facility, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center space-x-1 px-2 py-1 bg-slate-100 rounded-md text-xs text-slate-700"
+                          >
+                            {getFacilityIcon(facility)}
+                            <span>{facility}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

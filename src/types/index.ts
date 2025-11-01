@@ -1,6 +1,6 @@
 export interface Classroom {
   id: string;
-  name: string;
+  room_number: string;
   building: string;
   capacity: number;
   is_available: boolean;
@@ -8,7 +8,7 @@ export interface Classroom {
   facilities?: string[];
   floor?: number;
   university_id?: string;
-  created_at?: string;
+  last_updated?: string;
 }
 
 export interface Lift {

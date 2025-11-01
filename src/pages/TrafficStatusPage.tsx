@@ -3,17 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { ArrowLeft, MapPin, Clock, Navigation, TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react';
 
-interface TrafficRoute {
+interface POI {
   id: string;
-  route_name: string;
-  from_location: string;
-  to_location: string;
-  destination_latitude: number | null;
-  destination_longitude: number | null;
-  university_id: string | null;
-  status?: string;
-  estimated_time_minutes?: number;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  is_default: boolean;
+  created_at: string;
+}
+
+interface POITraffic {
+  id: string;
+  poi_id: string;
+  commute_time_minutes: number;
+  traffic_level: 'low' | 'moderate' | 'heavy' | 'severe';
+  last_updated: string;
+}
+
+interface CombinedPOIData extends POI {
+  commute_time_minutes?: number;
   traffic_level?: 'low' | 'moderate' | 'heavy' | 'severe';
+  last_updated?: string;
 }
 
 interface University {
@@ -24,7 +35,7 @@ interface University {
 
 export function TrafficStatusPage() {
   const navigate = useNavigate();
-  const [routes, setRoutes] = useState<TrafficRoute[]>([]);
+  const [pois, setPois] = useState<CombinedPOIData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [userUniversity, setUserUniversity] = useState<University | null>(null);
@@ -60,32 +71,27 @@ export function TrafficStatusPage() {
 
         setUserUniversity(uniData);
 
-        const { data: routesData } = await supabase
-          .from('traffic_routes')
-          .select('*')
-          .eq('university_id', profile.university_id);
-
-        const { data: trafficData } = await supabase
-          .from('traffic_status')
+        const { data: poisData } = await supabase
+          .from('pois')
           .select('*');
 
-        if (routesData && trafficData) {
-          const combined = routesData.map((route) => {
-            const traffic = trafficData.find((t) => t.route_id === route.id);
+        const { data: trafficData } = await supabase
+          .from('poi_traffic')
+          .select('*');
+
+        if (poisData && trafficData) {
+          const combined = poisData.map((poi) => {
+            const traffic = trafficData.find((t) => t.poi_id === poi.id);
             return {
-              ...route,
-              status: traffic?.status || 'unknown',
-              estimated_time_minutes: traffic?.estimated_time_minutes || 0,
-              traffic_level: mapStatusToLevel(traffic?.status || 'unknown'),
+              ...poi,
+              commute_time_minutes: traffic?.commute_time_minutes,
+              traffic_level: traffic?.traffic_level,
+              last_updated: traffic?.last_updated,
             };
           });
-          setRoutes(combined);
-        } else if (routesData) {
-          setRoutes(routesData.map(route => ({
-            ...route,
-            traffic_level: 'low' as const,
-            estimated_time_minutes: 0
-          })));
+          setPois(combined);
+        } else if (poisData) {
+          setPois(poisData);
         }
       }
     }
@@ -119,17 +125,8 @@ export function TrafficStatusPage() {
     }
   };
 
-  const mapStatusToLevel = (status: string): 'low' | 'moderate' | 'heavy' | 'severe' => {
-    const lowerStatus = status.toLowerCase();
-    if (lowerStatus.includes('light') || lowerStatus.includes('smooth')) return 'low';
-    if (lowerStatus.includes('moderate')) return 'moderate';
-    if (lowerStatus.includes('heavy')) return 'heavy';
-    if (lowerStatus.includes('severe') || lowerStatus.includes('congestion')) return 'severe';
-    return 'low';
-  };
-
-  const openInGoogleMaps = (route: TrafficRoute) => {
-    if (!route.destination_latitude || !route.destination_longitude) {
+  const openInGoogleMaps = (poi: CombinedPOIData) => {
+    if (!poi.latitude || !poi.longitude) {
       alert('Location coordinates not available for this destination');
       return;
     }
@@ -141,18 +138,11 @@ export function TrafficStatusPage() {
 
     const originLat = typeof userUniversity.latitude === 'string' ? parseFloat(userUniversity.latitude) : userUniversity.latitude;
     const originLng = typeof userUniversity.longitude === 'string' ? parseFloat(userUniversity.longitude) : userUniversity.longitude;
-    const destLat = typeof route.destination_latitude === 'string' ? parseFloat(route.destination_latitude) : route.destination_latitude;
-    const destLng = typeof route.destination_longitude === 'string' ? parseFloat(route.destination_longitude) : route.destination_longitude;
-
-    console.log('Origin:', { lat: originLat, lng: originLng });
-    console.log('Destination:', { lat: destLat, lng: destLng });
-    console.log('Route:', route);
 
     const origin = `${originLat},${originLng}`;
-    const destination = `${destLat},${destLng}`;
+    const destination = `${poi.latitude},${poi.longitude}`;
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`;
 
-    console.log('Maps URL:', mapsUrl);
     window.open(mapsUrl, '_blank');
   };
 
@@ -260,19 +250,19 @@ export function TrafficStatusPage() {
           )}
 
           <div className="space-y-3">
-            {routes.length === 0 && (
+            {pois.length === 0 && (
               <div className="text-center py-8 text-slate-500">
                 <p>No traffic data available</p>
               </div>
             )}
-            {routes.map((route) => {
-              const badge = route.traffic_level ? getTrafficBadge(route.traffic_level) : { text: 'No Data', color: 'bg-slate-500' };
+            {pois.map((poi) => {
+              const badge = poi.traffic_level ? getTrafficBadge(poi.traffic_level) : { text: 'No Data', color: 'bg-slate-500' };
               return (
                 <div
-                  key={route.id}
-                  onClick={() => openInGoogleMaps(route)}
+                  key={poi.id}
+                  onClick={() => openInGoogleMaps(poi)}
                   className={`rounded-xl border-2 p-4 transition-all hover:shadow-lg cursor-pointer ${
-                    route.traffic_level ? getTrafficColor(route.traffic_level) : 'bg-white border-slate-200'
+                    poi.traffic_level ? getTrafficColor(poi.traffic_level) : 'bg-white border-slate-200'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -281,26 +271,26 @@ export function TrafficStatusPage() {
                         <MapPin className="text-blue-600" size={20} />
                       </div>
                       <div className="flex items-center space-x-3">
-                        <h3 className="text-xl font-bold">{route.route_name}:</h3>
-                        {route.estimated_time_minutes > 0 ? (
+                        <h3 className="text-xl font-bold">{poi.name}:</h3>
+                        {poi.commute_time_minutes && poi.commute_time_minutes > 0 ? (
                           <>
-                            <span className="text-lg font-bold">{route.estimated_time_minutes} min</span>
+                            <span className="text-lg font-bold">{poi.commute_time_minutes} min</span>
                             <span className={`px-3 py-1 rounded-full text-sm font-bold ${badge.color} text-white`}>
                               {badge.text}
                             </span>
                           </>
                         ) : (
-                          <span className="text-slate-500">No data available</span>
+                          <span className="text-slate-500">No traffic data</span>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {route.traffic_level && getTrafficIcon(route.traffic_level)}
+                      {poi.traffic_level && getTrafficIcon(poi.traffic_level)}
                       <Navigation className="text-blue-600" size={20} />
                     </div>
                   </div>
                   <div className="mt-2 ml-14 text-sm text-slate-600">
-                    {route.from_location} → {route.to_location}
+                    {poi.address}
                   </div>
                 </div>
               );
