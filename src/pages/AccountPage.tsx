@@ -8,8 +8,7 @@ interface UserProfile {
   name: string;
   email: string;
   phone_number: string;
-  university: string;
-  university_id: string;
+  university_id: string | null;
 }
 
 interface University {
@@ -30,7 +29,6 @@ export function AccountPage() {
     name: '',
     email: '',
     phone_number: '',
-    university: '',
     university_id: '',
   });
 
@@ -61,7 +59,6 @@ export function AccountPage() {
           name: data.name,
           email: data.email,
           phone_number: data.phone_number,
-          university: data.university,
           university_id: data.university_id || '',
         });
       }
@@ -81,8 +78,6 @@ export function AccountPage() {
     };
 
     if (isAdmin && formData.university_id) {
-      const selectedUni = universities.find(u => u.id === formData.university_id);
-      updateData.university = selectedUni?.name || formData.university;
       updateData.university_id = formData.university_id;
     }
 
@@ -160,7 +155,6 @@ export function AccountPage() {
                           name: profile.name,
                           email: profile.email,
                           phone_number: profile.phone_number,
-                          university: profile.university,
                           university_id: profile.university_id || '',
                         });
                       }
@@ -269,7 +263,7 @@ export function AccountPage() {
                 </select>
               ) : (
                 <div className="px-4 py-3 bg-slate-50 rounded-lg text-slate-800 font-medium">
-                  {profile?.university}
+                  {universities.find(u => u.id === profile?.university_id)?.name || 'Not set'}
                 </div>
               )}
             </div>

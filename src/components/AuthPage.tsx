@@ -65,11 +65,11 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
         if (newSignInError) throw newSignInError;
 
+        const taylorsUni = universities.find(u => u.code === 'TAYLORS');
         await supabase.from('user_profiles').upsert({
           id: newUser!.id,
           name: 'Admin User',
-          university: 'Demo University (All Access)',
-          university_id: (await supabase.from('universities').select('id').eq('code', 'DEMO').single()).data?.id,
+          university_id: taylorsUni?.id || null,
           email: 'admin@campus.demo',
           phone_number: '+60123456789',
         });
@@ -81,11 +81,11 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
           .maybeSingle();
 
         if (!existingProfile) {
+          const taylorsUni = universities.find(u => u.code === 'TAYLORS');
           await supabase.from('user_profiles').insert({
             id: user!.id,
             name: 'Admin User',
-            university: 'Demo University (All Access)',
-            university_id: (await supabase.from('universities').select('id').eq('code', 'DEMO').single()).data?.id,
+            university_id: taylorsUni?.id || null,
             email: 'admin@campus.demo',
             phone_number: '+60123456789',
           });
@@ -138,12 +138,9 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
       if (signUpError) throw signUpError;
 
       if (authData.user) {
-        const selectedUniversity = universities.find(u => u.id === signupData.university_id);
-
         const { error: profileError } = await supabase.from('user_profiles').insert({
           id: authData.user.id,
           name: signupData.name,
-          university: selectedUniversity?.name || '',
           university_id: signupData.university_id,
           email: signupData.email,
           phone_number: signupData.phone,
