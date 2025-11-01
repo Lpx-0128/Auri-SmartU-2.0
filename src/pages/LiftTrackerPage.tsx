@@ -12,8 +12,9 @@ interface Lift {
 }
 
 interface Classroom {
-  name: string;
+  room_number: string;
   building: string;
+  floor: number;
 }
 
 export function LiftTrackerPage() {
@@ -37,7 +38,7 @@ export function LiftTrackerPage() {
     if (destination.trim()) {
       const filtered = classrooms.filter(
         (room) =>
-          room.name.toLowerCase().includes(destination.toLowerCase()) ||
+          room.room_number.toLowerCase().includes(destination.toLowerCase()) ||
           room.building.toLowerCase().includes(destination.toLowerCase())
       );
       setSearchResults(filtered.slice(0, 5));
@@ -72,7 +73,7 @@ export function LiftTrackerPage() {
 
     const [liftsData, classroomsData] = await Promise.all([
       supabase.from('lifts').select('*').eq('university_id', profile.university_id).order('building', { ascending: true }),
-      supabase.from('classrooms').select('name, building').eq('university_id', profile.university_id).order('building', { ascending: true }),
+      supabase.from('classrooms').select('room_number, building, floor').eq('university_id', profile.university_id).order('building, room_number', { ascending: true }),
     ]);
 
     if (liftsData.data) setLifts(liftsData.data);
@@ -198,10 +199,10 @@ export function LiftTrackerPage() {
                           <MapPin className="text-teal-600" size={20} />
                         </div>
                         <div>
-                          <div className="font-bold text-slate-800">{room.name}</div>
+                          <div className="font-bold text-slate-800">{room.building} - {room.room_number}</div>
                           <div className="text-sm text-slate-600 flex items-center space-x-2">
                             <Building2 size={14} />
-                            <span>{room.building}</span>
+                            <span>Floor {room.floor}</span>
                           </div>
                         </div>
                       </div>
@@ -248,7 +249,7 @@ export function LiftTrackerPage() {
                 <div>
                   <h2 className="text-2xl font-bold mb-1">Recommended Lifts</h2>
                   <p className="text-teal-100">
-                    Going to <span className="font-semibold">{selectedDestination.name}</span> · {selectedDestination.building}
+                    Going to <span className="font-semibold">{selectedDestination.building} - {selectedDestination.room_number}</span> · Floor {selectedDestination.floor}
                   </p>
                 </div>
                 <div className="text-right">
