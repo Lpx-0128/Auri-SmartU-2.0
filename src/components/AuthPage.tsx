@@ -172,13 +172,13 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
       <div className="absolute inset-0 flex items-center justify-center opacity-20">
         <div className="grid grid-cols-3 gap-8 p-8">
           <img src={taylorLogo} alt="Taylor University" className="w-48 h-48 object-contain" />
-          <img src={sunwayLogo} alt="Sunway University" className="w-48 h-48 object-contain" />
-          <img src={monashLogo} alt="Monash University" className="w-48 h-48 object-contain" />
-          <img src={monashLogo} alt="Monash University" className="w-48 h-48 object-contain" />
           <img src={taylorLogo} alt="Taylor University" className="w-48 h-48 object-contain" />
-          <img src={sunwayLogo} alt="Sunway University" className="w-48 h-48 object-contain" />
-          <img src={sunwayLogo} alt="Sunway University" className="w-48 h-48 object-contain" />
-          <img src={monashLogo} alt="Monash University" className="w-48 h-48 object-contain" />
+          <img src={taylorLogo} alt="Taylor University" className="w-48 h-48 object-contain" />
+          <img src={taylorLogo} alt="Taylor University" className="w-48 h-48 object-contain" />
+          <img src={taylorLogo} alt="Taylor University" className="w-48 h-48 object-contain" />
+          <img src={taylorLogo} alt="Taylor University" className="w-48 h-48 object-contain" />
+          <img src={taylorLogo} alt="Taylor University" className="w-48 h-48 object-contain" />
+          <img src={taylorLogo} alt="Taylor University" className="w-48 h-48 object-contain" />
           <img src={taylorLogo} alt="Taylor University" className="w-48 h-48 object-contain" />
         </div>
       </div>
