@@ -3,27 +3,29 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { ArrowLeft, MapPin, Clock, Navigation, TrendingUp, AlertTriangle } from 'lucide-react';
 
-interface POI {
+interface TrafficRoute {
   id: string;
-  name: string;
-  address: string;
-  is_default: boolean;
-  latitude: string;
-  longitude: string;
+  route_name: string;
+  from_location: string;
+  to_location: string;
+  destination_latitude: number | null;
+  destination_longitude: number | null;
+  university_id: string | null;
+  status?: string;
+  estimated_time_minutes?: number;
+  traffic_level?: 'low' | 'moderate' | 'heavy' | 'severe';
 }
 
-interface POIWithTraffic extends POI {
-  traffic: {
-    commute_time_minutes: number;
-    traffic_level: 'low' | 'moderate' | 'heavy' | 'severe';
-    last_updated: string;
-  } | null;
+interface University {
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export function TrafficStatusPage() {
   const navigate = useNavigate();
-  const [pois, setPois] = useState<POIWithTraffic[]>([]);
+  const [routes, setRoutes] = useState<TrafficRoute[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userUniversity, setUserUniversity] = useState<University | null>(null);
 
   useEffect(() => {
     fetchTrafficData();
@@ -32,30 +34,82 @@ export function TrafficStatusPage() {
   }, []);
 
   const fetchTrafficData = async () => {
-    const { data: poisData, error: poisError } = await supabase
-      .from('pois')
-      .select('*')
-      .order('is_default', { ascending: false })
-      .order('name');
+    const { data: { user } } = await supabase.auth.getUser();
 
-    const { data: trafficData, error: trafficError } = await supabase
-      .from('poi_traffic')
-      .select('*');
+    if (user) {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('university_id')
+        .eq('id', user.id)
+        .maybeSingle();
 
-    if (poisError) console.error('POIs error:', poisError);
-    if (trafficError) console.error('Traffic error:', trafficError);
+      if (profile?.university_id) {
+        const { data: uniData } = await supabase
+          .from('universities')
+          .select('latitude, longitude')
+          .eq('id', profile.university_id)
+          .maybeSingle();
 
-    if (poisData && trafficData) {
-      const combined = poisData.map((poi) => {
-        const traffic = trafficData.find((t) => t.poi_id === poi.id);
-        return {
-          ...poi,
-          traffic: traffic || null,
-        };
-      });
-      setPois(combined);
+        setUserUniversity(uniData);
+
+        const { data: routesData } = await supabase
+          .from('traffic_routes')
+          .select('*')
+          .eq('university_id', profile.university_id);
+
+        const { data: trafficData } = await supabase
+          .from('traffic_status')
+          .select('*');
+
+        if (routesData && trafficData) {
+          const combined = routesData.map((route) => {
+            const traffic = trafficData.find((t) => t.route_id === route.id);
+            return {
+              ...route,
+              status: traffic?.status || 'unknown',
+              estimated_time_minutes: traffic?.estimated_time_minutes || 0,
+              traffic_level: mapStatusToLevel(traffic?.status || 'unknown'),
+            };
+          });
+          setRoutes(combined);
+        } else if (routesData) {
+          setRoutes(routesData.map(route => ({
+            ...route,
+            traffic_level: 'low' as const,
+            estimated_time_minutes: 0
+          })));
+        }
+      }
     }
     setLoading(false);
+  };
+
+  const mapStatusToLevel = (status: string): 'low' | 'moderate' | 'heavy' | 'severe' => {
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('light') || lowerStatus.includes('smooth')) return 'low';
+    if (lowerStatus.includes('moderate')) return 'moderate';
+    if (lowerStatus.includes('heavy')) return 'heavy';
+    if (lowerStatus.includes('severe') || lowerStatus.includes('congestion')) return 'severe';
+    return 'low';
+  };
+
+  const openInGoogleMaps = (route: TrafficRoute) => {
+    if (!route.destination_latitude || !route.destination_longitude) {
+      alert('Location coordinates not available for this destination');
+      return;
+    }
+
+    let origin = '';
+    if (userUniversity?.latitude && userUniversity?.longitude) {
+      origin = `${userUniversity.latitude},${userUniversity.longitude}`;
+    } else {
+      origin = route.from_location;
+    }
+
+    const destination = `${route.destination_latitude},${route.destination_longitude}`;
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`;
+
+    window.open(mapsUrl, '_blank');
   };
 
   const getTrafficColor = (level: string) => {
@@ -140,18 +194,19 @@ export function TrafficStatusPage() {
           </h2>
 
           <div className="space-y-3">
-            {pois.length === 0 && (
+            {routes.length === 0 && (
               <div className="text-center py-8 text-slate-500">
                 <p>No traffic data available</p>
               </div>
             )}
-            {pois.map((poi) => {
-              const badge = poi.traffic ? getTrafficBadge(poi.traffic.traffic_level) : { text: 'No Data', color: 'bg-slate-500' };
+            {routes.map((route) => {
+              const badge = route.traffic_level ? getTrafficBadge(route.traffic_level) : { text: 'No Data', color: 'bg-slate-500' };
               return (
                 <div
-                  key={poi.id}
-                  className={`rounded-xl border-2 p-4 transition-all hover:shadow-lg ${
-                    poi.traffic ? getTrafficColor(poi.traffic.traffic_level) : 'bg-white border-slate-200'
+                  key={route.id}
+                  onClick={() => openInGoogleMaps(route)}
+                  className={`rounded-xl border-2 p-4 transition-all hover:shadow-lg cursor-pointer ${
+                    route.traffic_level ? getTrafficColor(route.traffic_level) : 'bg-white border-slate-200'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -160,10 +215,10 @@ export function TrafficStatusPage() {
                         <MapPin className="text-blue-600" size={20} />
                       </div>
                       <div className="flex items-center space-x-3">
-                        <h3 className="text-xl font-bold">{poi.name}:</h3>
-                        {poi.traffic ? (
+                        <h3 className="text-xl font-bold">{route.route_name}:</h3>
+                        {route.estimated_time_minutes > 0 ? (
                           <>
-                            <span className="text-lg font-bold">{poi.traffic.commute_time_minutes} min</span>
+                            <span className="text-lg font-bold">{route.estimated_time_minutes} min</span>
                             <span className={`px-3 py-1 rounded-full text-sm font-bold ${badge.color} text-white`}>
                               {badge.text}
                             </span>
@@ -173,7 +228,13 @@ export function TrafficStatusPage() {
                         )}
                       </div>
                     </div>
-                    {poi.traffic && getTrafficIcon(poi.traffic.traffic_level)}
+                    <div className="flex items-center space-x-2">
+                      {route.traffic_level && getTrafficIcon(route.traffic_level)}
+                      <Navigation className="text-blue-600" size={20} />
+                    </div>
+                  </div>
+                  <div className="mt-2 ml-14 text-sm text-slate-600">
+                    {route.from_location} → {route.to_location}
                   </div>
                 </div>
               );
