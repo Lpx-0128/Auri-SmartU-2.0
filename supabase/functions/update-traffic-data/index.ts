@@ -36,7 +36,7 @@ Deno.serve(async (req: Request) => {
 
     if (!googleMapsApiKey) {
       return new Response(
-        JSON.stringify({ error: 'Google Maps API key not configured' }),
+        JSON.stringify({ error: 'Google Maps API key not configured', message: 'Please add GOOGLE_MAPS_API_KEY to Supabase Edge Function secrets' }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -59,14 +59,21 @@ Deno.serve(async (req: Request) => {
     if (uniError) throw uniError;
 
     const updates = [];
+    const errors = [];
 
     for (const route of routes as TrafficRoute[]) {
       const university = (universities as University[]).find(
         (u) => u.id === route.university_id
       );
 
-      if (!university?.latitude || !university?.longitude) continue;
-      if (!route.destination_latitude || !route.destination_longitude) continue;
+      if (!university?.latitude || !university?.longitude) {
+        errors.push({ route: route.to_location, error: 'University location not found' });
+        continue;
+      }
+      if (!route.destination_latitude || !route.destination_longitude) {
+        errors.push({ route: route.to_location, error: 'Destination coordinates missing' });
+        continue;
+      }
 
       const origin = `${university.latitude},${university.longitude}`;
       const destination = `${route.destination_latitude},${route.destination_longitude}`;
@@ -76,26 +83,34 @@ Deno.serve(async (req: Request) => {
           origin
         )}&destinations=${encodeURIComponent(
           destination
-        )}&departure_time=now&traffic_model=best_guess&key=${googleMapsApiKey}`;
+        )}&departure_time=now&mode=driving&traffic_model=best_guess&key=${googleMapsApiKey}`;
 
         const mapsResponse = await fetch(mapsUrl);
         const mapsData = await mapsResponse.json();
 
+        if (mapsData.status !== 'OK') {
+          errors.push({ route: route.to_location, error: `Google Maps API error: ${mapsData.status}`, detail: mapsData.error_message });
+          continue;
+        }
+
         if (
-          mapsData.status === 'OK' &&
           mapsData.rows?.[0]?.elements?.[0]?.status === 'OK'
         ) {
           const element = mapsData.rows[0].elements[0];
           const durationInTraffic = element.duration_in_traffic || element.duration;
+          const normalDuration = element.duration;
           const minutes = Math.ceil(durationInTraffic.value / 60);
 
           let status = 'Light';
-          const durationRatio = durationInTraffic.value / element.duration.value;
-
-          if (durationRatio >= 1.5) {
-            status = 'Heavy';
-          } else if (durationRatio >= 1.25) {
-            status = 'Moderate';
+          if (element.duration_in_traffic) {
+            const durationRatio = durationInTraffic.value / normalDuration.value;
+            if (durationRatio >= 2.0) {
+              status = 'Severe';
+            } else if (durationRatio >= 1.4) {
+              status = 'Heavy';
+            } else if (durationRatio >= 1.15) {
+              status = 'Moderate';
+            }
           }
 
           updates.push({
@@ -103,10 +118,15 @@ Deno.serve(async (req: Request) => {
             status,
             estimated_time_minutes: minutes,
           });
+        } else {
+          errors.push({ route: route.to_location, error: `Route status: ${mapsData.rows?.[0]?.elements?.[0]?.status}` });
         }
       } catch (error) {
-        console.error(`Error fetching traffic for route ${route.id}:`, error);
+        errors.push({ route: route.to_location, error: error.message });
+        console.error(`Error fetching traffic for route ${route.to_location}:`, error);
       }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     if (updates.length > 0) {
@@ -120,7 +140,12 @@ Deno.serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, updated: updates.length }),
+      JSON.stringify({ 
+        success: true, 
+        updated: updates.length, 
+        total_routes: (routes as TrafficRoute[]).length,
+        errors: errors.length > 0 ? errors : undefined 
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
@@ -128,7 +153,7 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, stack: error.stack }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
