@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { GraduationCap, Mail, Phone, Building2, User, Lock, AlertCircle, Key } from 'lucide-react';
-import taylorLogo from '../assets/unnamed copy copy.png';
+import taylorLogo from '../assets/images (1).png';
 import sunwayLogo from '../assets/sunway-logo copy.jpg';
 import monashLogo from '../assets/monash-logo-v2 copy copy.png';
 
