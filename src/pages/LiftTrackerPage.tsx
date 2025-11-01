@@ -5,7 +5,7 @@ import { ArrowLeft, Search, Users, Clock, TrendingUp, TrendingDown, Minus, MapPi
 
 interface Lift {
   id: string;
-  name: string;
+  lift_id: string;
   building: string;
   current_floor: number;
   queue_count: number;
@@ -278,7 +278,7 @@ export function LiftTrackerPage() {
                       )}
 
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-2xl font-bold">{lift.name}</h3>
+                        <h3 className="text-2xl font-bold">{lift.lift_id}</h3>
                         <div className="flex items-center space-x-2">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${badge.color} text-white`}>
                             {badge.text}
@@ -350,7 +350,7 @@ export function LiftTrackerPage() {
                   {buildingLifts.map((lift) => (
                     <div key={lift.id} className="bg-white rounded-xl p-4 border-2 border-slate-200 hover:border-teal-300 transition-all hover:shadow-md">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-bold text-slate-800 text-lg">{lift.name}</h4>
+                        <h4 className="font-bold text-slate-800 text-lg">{lift.lift_id}</h4>
                       </div>
 
                       <div className="space-y-2 text-sm">
