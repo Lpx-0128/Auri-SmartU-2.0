@@ -144,10 +144,15 @@ export function TrafficStatusPage() {
     const destLat = typeof route.destination_latitude === 'string' ? parseFloat(route.destination_latitude) : route.destination_latitude;
     const destLng = typeof route.destination_longitude === 'string' ? parseFloat(route.destination_longitude) : route.destination_longitude;
 
+    console.log('Origin:', { lat: originLat, lng: originLng });
+    console.log('Destination:', { lat: destLat, lng: destLng });
+    console.log('Route:', route);
+
     const origin = `${originLat},${originLng}`;
     const destination = `${destLat},${destLng}`;
     const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&travelmode=driving`;
 
+    console.log('Maps URL:', mapsUrl);
     window.open(mapsUrl, '_blank');
   };
 
