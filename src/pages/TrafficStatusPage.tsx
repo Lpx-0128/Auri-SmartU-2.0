@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { ArrowLeft, MapPin, Clock, Navigation, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Navigation, TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface TrafficRoute {
   id: string;
@@ -25,12 +25,19 @@ export function TrafficStatusPage() {
   const navigate = useNavigate();
   const [routes, setRoutes] = useState<TrafficRoute[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [userUniversity, setUserUniversity] = useState<University | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchTrafficData();
-    const interval = setInterval(fetchTrafficData, 30000);
-    return () => clearInterval(interval);
+    updateLiveTrafficData();
+    const dataInterval = setInterval(fetchTrafficData, 30000);
+    const updateInterval = setInterval(updateLiveTrafficData, 300000);
+    return () => {
+      clearInterval(dataInterval);
+      clearInterval(updateInterval);
+    };
   }, []);
 
   const fetchTrafficData = async () => {
@@ -82,6 +89,33 @@ export function TrafficStatusPage() {
       }
     }
     setLoading(false);
+  };
+
+  const updateLiveTrafficData = async () => {
+    try {
+      setRefreshing(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-traffic-data`;
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        console.log('Traffic data updated successfully');
+        setLastUpdated(new Date());
+        await fetchTrafficData();
+      }
+    } catch (error) {
+      console.error('Error updating live traffic data:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const mapStatusToLevel = (status: string): 'low' | 'moderate' | 'heavy' | 'severe' => {
@@ -187,10 +221,25 @@ export function TrafficStatusPage() {
 
       <div className="max-w-7xl mx-auto p-6">
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6">
-          <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center space-x-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-            <span>Live Traffic Updates</span>
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-slate-800 flex items-center space-x-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+              <span>Live Traffic Updates</span>
+            </h2>
+            <button
+              onClick={updateLiveTrafficData}
+              disabled={refreshing}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+              <span>{refreshing ? 'Updating...' : 'Refresh Live Data'}</span>
+            </button>
+          </div>
+          {lastUpdated && (
+            <div className="mb-4 text-sm text-slate-600">
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </div>
+          )}
 
           <div className="space-y-3">
             {routes.length === 0 && (
@@ -270,7 +319,7 @@ export function TrafficStatusPage() {
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-blue-200 text-xs text-blue-700">
-            <span className="font-semibold">Live Updates:</span> Data refreshes every 30 seconds · ETA calculated from university location
+            <span className="font-semibold">Live Updates:</span> Traffic data fetched from Google Maps every 5 minutes · Display refreshes every 30 seconds · Click any destination for turn-by-turn directions
           </div>
         </div>
       </div>
