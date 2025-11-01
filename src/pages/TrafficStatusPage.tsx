@@ -17,6 +17,7 @@ interface TrafficRoute {
 }
 
 interface University {
+  name?: string;
   latitude: number | null;
   longitude: number | null;
 }
@@ -53,7 +54,7 @@ export function TrafficStatusPage() {
       if (profile?.university_id) {
         const { data: uniData } = await supabase
           .from('universities')
-          .select('latitude, longitude')
+          .select('name, latitude, longitude')
           .eq('id', profile.university_id)
           .maybeSingle();
 
@@ -222,10 +223,17 @@ export function TrafficStatusPage() {
       <div className="max-w-7xl mx-auto p-6">
         <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-slate-800 flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span>Live Traffic Updates</span>
-            </h2>
+            <div>
+              <h2 className="text-2xl font-bold text-slate-800 flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span>Live Traffic Updates</span>
+              </h2>
+              {userUniversity?.name && (
+                <p className="text-sm text-slate-600 mt-2 ml-4">
+                  Starting from: <span className="font-semibold text-blue-600">{userUniversity.name}</span>
+                </p>
+              )}
+            </div>
             <button
               onClick={updateLiveTrafficData}
               disabled={refreshing}
