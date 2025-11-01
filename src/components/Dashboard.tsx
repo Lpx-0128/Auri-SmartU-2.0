@@ -3,9 +3,9 @@ import { supabase } from '../lib/supabase';
 import { UserCircle2, School, ArrowUpDown, Car, ParkingSquare, BookOpen, Utensils, CalendarDays, Phone } from 'lucide-react';
 import { VoiceAssistant } from './VoiceAssistant';
 import { useState, useEffect } from 'react';
-import taylorsLogo from '../assets/images (1).png';
+import taylorsLogo from '../assets/images (1) copy.png';
 import monashLogo from '../assets/monash-logo-v2 copy copy.png';
-import sunwayLogo from '../assets/sunway-logo copy.jpg';
+import sunwayLogo from '../assets/Sunway_logo.jpg';
 
 const universityLogos: Record<string, string> = {
   'TAYLOR': taylorsLogo,

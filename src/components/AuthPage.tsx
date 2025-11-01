@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { GraduationCap, Mail, Phone, Building2, User, Lock, AlertCircle, Key } from 'lucide-react';
-import taylorLogo from '../assets/images (1).png';
-import sunwayLogo from '../assets/sunway-logo copy.jpg';
+import taylorLogo from '../assets/images (1) copy.png';
+import sunwayLogo from '../assets/Sunway_logo.jpg';
 import monashLogo from '../assets/monash-logo-v2 copy copy.png';
 
 interface AuthPageProps {
