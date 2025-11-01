@@ -26,27 +26,63 @@ export function ClassroomAvailability({ onClose }: ClassroomAvailabilityProps) {
   }, [classrooms, searchTerm, filterBuilding, showAvailableOnly]);
 
   const fetchClassrooms = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
 
-    if (user) {
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('university_id')
-        .eq('id', user.id)
-        .maybeSingle();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('university_id')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      if (profile?.university_id) {
-        const { data } = await supabase
+        if (profile?.university_id) {
+          const { data, error } = await supabase
+            .from('classrooms')
+            .select('*')
+            .eq('university_id', profile.university_id)
+            .order('building', { ascending: true })
+            .order('room_number', { ascending: true });
+
+          if (error) {
+            console.error('Error fetching classrooms:', error);
+          }
+
+          if (data) {
+            setClassrooms(data);
+          }
+        } else {
+          const { data, error } = await supabase
+            .from('classrooms')
+            .select('*')
+            .order('building', { ascending: true })
+            .order('room_number', { ascending: true });
+
+          if (error) {
+            console.error('Error fetching classrooms:', error);
+          }
+
+          if (data) {
+            setClassrooms(data);
+          }
+        }
+      } else {
+        const { data, error } = await supabase
           .from('classrooms')
           .select('*')
-          .eq('university_id', profile.university_id)
           .order('building', { ascending: true })
           .order('room_number', { ascending: true });
+
+        if (error) {
+          console.error('Error fetching classrooms:', error);
+        }
 
         if (data) {
           setClassrooms(data);
         }
       }
+    } catch (error) {
+      console.error('Error in fetchClassrooms:', error);
     }
     setLoading(false);
   };
@@ -167,7 +203,11 @@ export function ClassroomAvailability({ onClose }: ClassroomAvailabilityProps) {
                 <MapPin size={48} className="mx-auto" />
               </div>
               <h3 className="text-xl font-bold text-slate-800 mb-2">No classrooms found</h3>
-              <p className="text-slate-600">Try adjusting your filters</p>
+              <p className="text-slate-600">
+                {classrooms.length === 0
+                  ? 'No classroom data available in the database yet'
+                  : 'Try adjusting your filters'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
