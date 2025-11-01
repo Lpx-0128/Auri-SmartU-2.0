@@ -190,10 +190,11 @@ export function AccountPage() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter your full name"
                 />
               ) : (
                 <div className="px-4 py-3 bg-slate-50 rounded-lg text-slate-800 font-medium">
-                  {profile?.name}
+                  {profile?.name || <span className="text-slate-400 italic">Not set - click Edit to add</span>}
                 </div>
               )}
             </div>
@@ -211,10 +212,11 @@ export function AccountPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="your.email@university.edu"
                 />
               ) : (
                 <div className="px-4 py-3 bg-slate-50 rounded-lg text-slate-800 font-medium">
-                  {profile?.email}
+                  {profile?.email || <span className="text-slate-400 italic">Not set</span>}
                 </div>
               )}
             </div>
@@ -232,10 +234,11 @@ export function AccountPage() {
                   value={formData.phone_number}
                   onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="+60123456789"
                 />
               ) : (
                 <div className="px-4 py-3 bg-slate-50 rounded-lg text-slate-800 font-medium">
-                  {profile?.phone_number}
+                  {profile?.phone_number || <span className="text-slate-400 italic">Not set - click Edit to add</span>}
                 </div>
               )}
             </div>
