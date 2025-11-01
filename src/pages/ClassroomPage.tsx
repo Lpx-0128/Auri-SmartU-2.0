@@ -24,11 +24,30 @@ export function ClassroomPage() {
   }, [classrooms, searchTerm, filterBuilding, showAvailableOnly]);
 
   const fetchClassrooms = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('university_id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profile?.university_id) {
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('classrooms')
       .select('*')
+      .eq('university_id', profile.university_id)
       .order('building', { ascending: true })
-      .order('room_number', { ascending: true });
+      .order('name', { ascending: true });
 
     if (data) {
       setClassrooms(data);
@@ -50,7 +69,7 @@ export function ClassroomPage() {
     if (searchTerm) {
       filtered = filtered.filter(
         (room) =>
-          room.room_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           room.building.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -166,7 +185,7 @@ export function ClassroomPage() {
                   <div>
                     <div className="flex items-center space-x-2 mb-1">
                       <MapPin className="text-blue-600" size={18} />
-                      <h3 className="font-bold text-slate-800">{room.room_number}</h3>
+                      <h3 className="font-bold text-slate-800">{room.name}</h3>
                     </div>
                     <p className="text-sm text-slate-600">{room.building}</p>
                   </div>
@@ -188,10 +207,12 @@ export function ClassroomPage() {
                     <span className="font-medium text-slate-800">{room.capacity} seats</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-600">Floor</span>
-                    <span className="font-medium text-slate-800">{room.floor}</span>
-                  </div>
+                  {room.floor && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600">Floor</span>
+                      <span className="font-medium text-slate-800">{room.floor}</span>
+                    </div>
+                  )}
 
                   {!room.is_available && room.available_until && (
                     <div className="flex items-center justify-between text-sm">

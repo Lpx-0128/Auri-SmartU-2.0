@@ -1,13 +1,14 @@
 export interface Classroom {
   id: string;
+  name: string;
   building: string;
-  room_number: string;
   capacity: number;
   is_available: boolean;
-  available_until: string | null;
-  facilities: string[];
-  floor: number;
-  last_updated: string;
+  available_until?: string | null;
+  facilities?: string[];
+  floor?: number;
+  university_id?: string;
+  created_at?: string;
 }
 
 export interface Lift {
