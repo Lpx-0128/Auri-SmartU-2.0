@@ -40,14 +40,21 @@ export function Dashboard() {
   }, []);
 
   const getCurrentTime = (): Date => {
-    const override = localStorage.getItem('timeOverride');
-    if (override) {
-      const [hours, minutes] = override.split(':').map(Number);
-      const now = new Date();
-      now.setHours(hours, minutes, 0, 0);
-      return now;
+    const timeOverride = localStorage.getItem('timeOverride');
+    const dateOverride = localStorage.getItem('dateOverride');
+
+    let now = new Date();
+
+    if (dateOverride) {
+      now = new Date(dateOverride);
     }
-    return new Date();
+
+    if (timeOverride) {
+      const [hours, minutes] = timeOverride.split(':').map(Number);
+      now.setHours(hours, minutes, 0, 0);
+    }
+
+    return now;
   };
 
   const fetchUserUniversity = async () => {

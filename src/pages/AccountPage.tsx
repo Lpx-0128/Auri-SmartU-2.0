@@ -32,14 +32,19 @@ export function AccountPage() {
     university_id: '',
   });
   const [timeOverride, setTimeOverride] = useState<string>('');
+  const [dateOverride, setDateOverride] = useState<string>('');
 
   useEffect(() => {
     fetchProfile();
     fetchUniversities();
 
-    const saved = localStorage.getItem('timeOverride');
-    if (saved) {
-      setTimeOverride(saved);
+    const savedTime = localStorage.getItem('timeOverride');
+    const savedDate = localStorage.getItem('dateOverride');
+    if (savedTime) {
+      setTimeOverride(savedTime);
+    }
+    if (savedDate) {
+      setDateOverride(savedDate);
     }
   }, []);
 
@@ -52,9 +57,20 @@ export function AccountPage() {
     }
   };
 
+  const handleDateOverride = (date: string) => {
+    setDateOverride(date);
+    if (date) {
+      localStorage.setItem('dateOverride', date);
+    } else {
+      localStorage.removeItem('dateOverride');
+    }
+  };
+
   const resetTime = () => {
     setTimeOverride('');
+    setDateOverride('');
     localStorage.removeItem('timeOverride');
+    localStorage.removeItem('dateOverride');
   };
 
   const fetchUniversities = async () => {
@@ -315,27 +331,38 @@ export function AccountPage() {
           </div>
 
           <div className="p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Override Current Time
-              </label>
-              <div className="flex space-x-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Override Date
+                </label>
+                <input
+                  type="date"
+                  value={dateOverride}
+                  onChange={(e) => handleDateOverride(e.target.value)}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Override Time
+                </label>
                 <input
                   type="time"
                   value={timeOverride}
                   onChange={(e) => handleTimeOverride(e.target.value)}
-                  className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <button
-                  onClick={resetTime}
-                  className="px-4 py-3 bg-slate-200 text-slate-800 rounded-lg font-medium hover:bg-slate-300 transition-all flex items-center space-x-2"
-                  title="Reset to Real Time"
-                >
-                  <RotateCcw size={18} />
-                  <span>Reset</span>
-                </button>
               </div>
             </div>
+            <button
+              onClick={resetTime}
+              className="w-full px-4 py-3 bg-slate-200 text-slate-800 rounded-lg font-medium hover:bg-slate-300 transition-all flex items-center justify-center space-x-2"
+              title="Reset to Real Time and Date"
+            >
+              <RotateCcw size={18} />
+              <span>Reset to Real Time & Date</span>
+            </button>
 
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-800">
@@ -343,10 +370,14 @@ export function AccountPage() {
               </p>
             </div>
 
-            {timeOverride && (
+            {(timeOverride || dateOverride) && (
               <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-sm text-green-800">
-                  <strong>Active Override:</strong> Dashboard is now showing alerts for <span className="font-bold">{timeOverride}</span>. Return to dashboard to see the prediction.
+                  <strong>Active Override:</strong> Dashboard is now showing alerts for{' '}
+                  {dateOverride && <span className="font-bold">{new Date(dateOverride).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>}
+                  {dateOverride && timeOverride && ' at '}
+                  {timeOverride && <span className="font-bold">{timeOverride}</span>}
+                  . Return to dashboard to see the prediction.
                 </p>
               </div>
             )}
