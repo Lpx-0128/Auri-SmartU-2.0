@@ -115,7 +115,11 @@ Rules:
 - Focus on the most impactful prediction`;
 
     const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+    console.log("OpenAI API Key present:", !!openaiApiKey);
+    console.log("OpenAI API Key length:", openaiApiKey?.length || 0);
+    
     if (!openaiApiKey) {
+      console.error("OPENAI_API_KEY environment variable is not set");
       throw new Error("OPENAI_API_KEY not configured");
     }
 
@@ -143,6 +147,8 @@ Rules:
     });
 
     if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text();
+      console.error('OpenAI API error:', openaiResponse.status, errorText);
       throw new Error(`OpenAI API error: ${openaiResponse.statusText}`);
     }
 
