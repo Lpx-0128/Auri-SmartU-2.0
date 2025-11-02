@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { ArrowLeft, User, Mail, Phone, Building2, Save, LogOut } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Building2, Save, LogOut, Clock, RotateCcw } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -31,11 +31,31 @@ export function AccountPage() {
     phone_number: '',
     university_id: '',
   });
+  const [timeOverride, setTimeOverride] = useState<string>('');
 
   useEffect(() => {
     fetchProfile();
     fetchUniversities();
+
+    const saved = localStorage.getItem('timeOverride');
+    if (saved) {
+      setTimeOverride(saved);
+    }
   }, []);
+
+  const handleTimeOverride = (time: string) => {
+    setTimeOverride(time);
+    if (time) {
+      localStorage.setItem('timeOverride', time);
+    } else {
+      localStorage.removeItem('timeOverride');
+    }
+  };
+
+  const resetTime = () => {
+    setTimeOverride('');
+    localStorage.removeItem('timeOverride');
+  };
 
   const fetchUniversities = async () => {
     const { data } = await supabase.from('universities').select('*').order('name');
@@ -280,6 +300,56 @@ export function AccountPage() {
               <LogOut size={18} />
               <span>Sign Out</span>
             </button>
+          </div>
+        </div>
+
+        <div className="mt-6 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+          <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-slate-800 to-slate-700">
+            <div className="flex items-center space-x-3">
+              <Clock className="text-yellow-400" size={24} />
+              <div>
+                <h3 className="text-xl font-bold text-white">Developer Tools</h3>
+                <p className="text-slate-300 text-sm">Time Override for Testing Alerts</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Override Current Time
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  type="time"
+                  value={timeOverride}
+                  onChange={(e) => handleTimeOverride(e.target.value)}
+                  className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={resetTime}
+                  className="px-4 py-3 bg-slate-200 text-slate-800 rounded-lg font-medium hover:bg-slate-300 transition-all flex items-center space-x-2"
+                  title="Reset to Real Time"
+                >
+                  <RotateCcw size={18} />
+                  <span>Reset</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>How it works:</strong> Set a specific time to see how the dashboard alert system responds throughout the day. The alert on the dashboard will update based on your chosen time.
+              </p>
+            </div>
+
+            {timeOverride && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">
+                  <strong>Active Override:</strong> Dashboard is now showing alerts for <span className="font-bold">{timeOverride}</span>. Return to dashboard to see the prediction.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

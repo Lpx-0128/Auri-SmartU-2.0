@@ -31,13 +31,24 @@ export function Dashboard() {
     fetchUserUniversity();
 
     const timer = setInterval(() => {
-      const now = new Date();
+      const now = getCurrentTime();
       setCurrentTime(now);
       updateAlert(now);
     }, 1000);
 
     return () => clearInterval(timer);
   }, []);
+
+  const getCurrentTime = (): Date => {
+    const override = localStorage.getItem('timeOverride');
+    if (override) {
+      const [hours, minutes] = override.split(':').map(Number);
+      const now = new Date();
+      now.setHours(hours, minutes, 0, 0);
+      return now;
+    }
+    return new Date();
+  };
 
   const fetchUserUniversity = async () => {
     const { data: { user } } = await supabase.auth.getUser();
